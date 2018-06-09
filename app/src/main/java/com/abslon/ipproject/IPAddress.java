@@ -1,85 +1,145 @@
 package com.abslon.ipproject;
 
-import org.snmp4j.asn1.BER;
-import org.snmp4j.asn1.BERInputStream;
+import org.snmp4j.asn1.*;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 
 public class IPAddress implements Variable
 {
-    /*
-    private static final byte[] IPANYADDRESS = { 0,0,0,0 };
-    public static final InetAddress ANY_IPADDRESS = //InetAddress.getByAddress(IPANYADDRESS);*/
+    // IP 주소 값
     private java.net.InetAddress inetAddress;
 
-    public IPAddress() {
+    // 생성자
+    public IPAddress() { }
 
-    }
-
-    public IPAddress(InetAddress address) {
-        if (address == null) {
+    public IPAddress(InetAddress address)
+    {
+        if (address == null)
             throw new NullPointerException();
-        }
-        this.inetAddress = address;
+
+        else this.inetAddress = address;
     }
 
-    public static IPAddress parse(String address) {
-        try {
+    public IPAddress(String address)
+    {
+        try
+        {
+            InetAddress addr = InetAddress.getByName(address);
+            setInetAddress(addr);
+        }
+        catch (Exception ex)
+        {
+            throw new IllegalArgumentException(address);
+        }
+    }
+
+    public IPAddress(byte[] addressBytes)
+    {
+        try
+        {
+            this.inetAddress = InetAddress.getByAddress(addressBytes);
+        }
+        catch (UnknownHostException ex)
+        {
+            throw new IllegalArgumentException("Unknown host: "+ex.getMessage());
+        }
+    }
+
+    // parsing IP address
+    public static IPAddress Parse(String address)
+    {
+        try
+        {
             InetAddress addr = InetAddress.getByName(address);
             return new IPAddress(addr);
         }
-        catch (Exception ex) {
-            return null;
+        catch (Exception ex)
+        {
+            throw new IllegalArgumentException(address);
         }
     }
 
-    public boolean parseAddress(String address) {
-        try {
+    public boolean CanParse(String address)
+    {
+        try
+        {
             inetAddress = InetAddress.getByName(address);
             return true;
         }
-        catch (UnknownHostException uhex) {
+        catch (UnknownHostException uhex)
+        {
             return false;
         }
     }
 
-    public void decodeBER(BERInputStream inputStream) throws java.io.IOException {
+    // BERSerializable 인터페이스
+    public int getBERLength() { return 6; }
+
+    public int getBERPayloadLength() { return getBERLength(); }
+
+    public void encodeBER(OutputStream outputStream) throws java.io.IOException
+    {
+        byte[] address = new byte[4];
+        System.arraycopy(inetAddress.getAddress(), 0, address, 0, 4);
+        BER.encodeString(outputStream, BER.IPADDRESS, address);
+    }
+
+    public void decodeBER(BERInputStream inputStream) throws java.io.IOException
+    {
         BER.MutableByte type = new BER.MutableByte();
         byte[] value = BER.decodeString(inputStream, type);
-        if (type.getValue() != BER.IPADDRESS) {
-            throw new IOException("Wrong type encountered when decoding Counter: "+
-                    type.getValue());
+        if (type.getValue() != BER.IPADDRESS)
+        {
+            throw new IOException("IP 주소가 아닌 값을 decoding 했습니다. 들어온 type : "+ type.getValue());
         }
-        if (value.length != 4) {
-            throw new IOException("IpAddress encoding error, wrong length: " +
-                    value.length);
+        if (value.length != 4)
+        {
+            throw new IOException("IP 주소 encoding이 잘못되었습니다. 길이 : " + value.length);
         }
         inetAddress = InetAddress.getByAddress(value);
     }
 
-    public void encodeBER(OutputStream outputStream) throws java.io.IOException {
-        byte[] address = new byte[4];
-        if (inetAddress instanceof Inet6Address) {
-            Inet6Address v6Addr = (Inet6Address)inetAddress;
-            if (v6Addr.isIPv4CompatibleAddress()) {
-                byte[] v6Bytes = inetAddress.getAddress();
-                System.arraycopy(v6Bytes, v6Bytes.length-5, address, 0, 4);
-            }
-        }
-        else {
-            System.arraycopy(inetAddress.getAddress(), 0, address, 0, 4);
-        }
-        BER.encodeString(outputStream, BER.IPADDRESS, address);
+    // Variable 인터페이스
+
+    public int compareTo(Variable o)
+    {
+        OctetString a = new OctetString(inetAddress.getAddress());
+        return a.compareTo(new OctetString(((IPAddress)o).getInetAddress().getAddress()));
     }
 
-    public int getBERPayloadLength() {
-        return getBERLength();
+    public boolean equals(Object o) { return (o instanceof IPAddress) && (compareTo((IPAddress)o) == 0); }
+
+    public Object clone() { return new IPAddress(inetAddress); }
+
+    public int getSyntax() { return BER.IPADDRESS; }
+
+    public boolean isException() { return false; }
+
+    public String toString() {return inetAddress.toString(); }
+
+    // getsetter
+    public void setAddress(byte[] rawValue) throws UnknownHostException { this.inetAddress = InetAddress.getByAddress(rawValue); }
+
+    public void setInetAddress(java.net.InetAddress inetAddress) { this.inetAddress = inetAddress; }
+
+    public InetAddress getInetAddress() { return inetAddress; }
+
+    public void setValue(String value)
+    {
+        if (!CanParse(value))
+            throw new IllegalArgumentException(value+" cannot be parsed by "+ getClass().getName());
     }
 
-    public int getBERLength() {
-        return 6;
+    public void setValue(byte[] value)
+    {
+        try
+        {
+            setAddress(value);
+        }
+        catch (UnknownHostException ex)
+        {
+            throw new RuntimeException(ex);
+        }
     }
 }
