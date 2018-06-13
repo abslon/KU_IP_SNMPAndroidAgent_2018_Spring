@@ -13,23 +13,6 @@ public class Counter32 extends UnsignedInt32
         super(value);
     }
 
-    public Counter32(int value) {
-        super(value);
-    }
-
-    // Counter increment
-    public long increment(long increment)
-    {
-        if (increment >= 0)
-        {
-            if (value + increment < 4294967295L) value += increment;
-            else value = increment - (4294967295L - value);
-        }
-
-        else throw new IllegalArgumentException("Counter32의 increment 파라메터가 음수입니다. 값 : "+increment);
-
-        return value;
-    }
 
     // BERSerializable 인터페이스
     // Unsigned int와 같으나, type만 BER.Counter32로 변경. length는 동일함.

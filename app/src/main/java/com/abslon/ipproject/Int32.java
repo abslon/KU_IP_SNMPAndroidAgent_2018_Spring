@@ -30,8 +30,8 @@ public class Int32 implements Variable
         else return 6;
     }
 
-    // int는 payload가 따로 있는게 아닌 type이므로 BER 길이와 같음.
-    public int getBERPayloadLength() { return getBERLength(); }
+    // BER length - type(1byte) - length(1byte)
+    public int getBERPayloadLength() { return getBERLength() - 2; }
 
     // BER encoding
     public void encodeBER(OutputStream outputStream) throws java.io.IOException

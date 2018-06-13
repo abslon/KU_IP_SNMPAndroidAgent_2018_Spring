@@ -27,43 +27,67 @@ public class OID implements Variable
 
     public static int[] parseOID(String text)
     {
-        StringTokenizer st = new StringTokenizer(text, ".", true);
+        StringTokenizer st = new StringTokenizer(text, ".");
         int size = st.countTokens();
         int[] value = new int[size];
         size = 0;
         StringBuffer buf = null;
-        while (st.hasMoreTokens()) {
+        while (st.hasMoreTokens())
+        {
             String t = st.nextToken();
-            if ((buf == null) && t.startsWith("'")) {
-                buf = new StringBuffer();
-                t = t.substring(1);
-            }
-            if ((buf != null) && (t.endsWith("'"))) {
-                buf.append(t.substring(0, t.length()-1));
-                OID o = new OctetString(buf.toString()).toSubIndex(true);
-                int[] h = value;
-                value = new int[st.countTokens()+h.length+o.size()];
-                System.arraycopy(h, 0, value, 0, size);
-                System.arraycopy(o.getValue(), 0, value, size, o.size());
-                size += o.size();
-                buf = null;
-            }
-            else if (buf != null) {
-                buf.append(t);
-            }
-            else if (!".".equals(t)) {
-                value[size++] = (int) Long.parseLong(t.trim());
-            }
-        }
-        if (size < value.length) {
-            int[] h = value;
-            value = new int[size];
-            System.arraycopy(h, 0, value, 0, size);
+            value[size++] = (int) Long.parseLong(t);
         }
         return value;
     }
 
-    public int leftMostCompare(int n, OID other)
+    // BERSerializable
+    public int getBERLength()
+    {
+        int length = BER.getOIDLength(value);
+        return length + BER.getBERLengthOfLength(length) + 1;
+    }
+
+    public int getBERPayloadLength() { return BER.getOIDLength(value); }
+
+    public void encodeBER(OutputStream outputStream) throws java.io.IOException
+    {
+        BER.encodeOID(outputStream, BER.OID, value);
+    }
+
+    public void decodeBER(BERInputStream inputStream) throws java.io.IOException
+    {
+        BER.MutableByte type = new BER.MutableByte();
+        int[] v = BER.decodeOID(inputStream, type);
+        if (type.getValue() != BER.OID)
+        {
+            throw new IOException("OID가 아닌 값을 decoding 했습니다. 들어온 type : "+ type.getValue());
+        }
+        value = v;
+    }
+
+    // Variable 인터페이스
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof OID)
+        {
+            OID other = (OID)obj;
+            if (other.value.length != value.length)
+            {
+                return false;
+            }
+            for (int i = 0; i< value.length; i++)
+            {
+                if (value[i] != other.value[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public int Compare(int n, OID other)
     {
         for (int i = 0; i<n && i < value.length && i < other.size(); i++)
         {
@@ -90,62 +114,13 @@ public class OID implements Variable
         return 0;
     }
 
-    // BERSerializable
-    public int getBERLength()
-    {
-        int length = BER.getOIDLength(value);
-        return length + BER.getBERLengthOfLength(length) + 1;
-    }
-
-    public int getBERPayloadLength() { return getBERLength(); }
-
-    public void decodeBER(BERInputStream inputStream) throws java.io.IOException
-    {
-        BER.MutableByte type = new BER.MutableByte();
-        int[] v = BER.decodeOID(inputStream, type);
-        if (type.getValue() != BER.OID)
-        {
-            throw new IOException("Wrong type encountered when decoding OID: "+
-                    type.getValue());
-        }
-        value = v;
-    }
-
-    public void encodeBER(OutputStream outputStream) throws java.io.IOException
-    {
-        BER.encodeOID(outputStream, BER.OID, value);
-    }
-
-    // Variable 인터페이스
-
-    public boolean equals(Object obj)
-    {
-        if (obj instanceof OID)
-        {
-            OID other = (OID)obj;
-            if (other.value.length != value.length)
-            {
-                return false;
-            }
-            for (int i = 0; i< value.length; i++)
-            {
-                if (value[i] != other.value[i])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
     public final int compareTo(Variable o)
     {
         if (o instanceof OID)
         {
             OID other = (OID)o;
             int min = Math.min(value.length, other.value.length);
-            int result = leftMostCompare(min, other);
+            int result = Compare(min, other);
             if (result == 0)
             {
                 return (value.length - other.value.length);

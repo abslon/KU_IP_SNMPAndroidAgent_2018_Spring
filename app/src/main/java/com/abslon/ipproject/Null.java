@@ -34,22 +34,20 @@ public class Null implements Variable
         else this.syntax = syntax;
     }
 
-    public void decodeBER(BERInputStream inputStream) throws java.io.IOException
-    {
-        BER.MutableByte type = new BER.MutableByte();
-        BER.decodeNull(inputStream, type);
-        this.syntax = type.getValue() & 0xFF;
-    }
-
     public int getBERLength() { return 2; }
+
+    public int getBERPayloadLength() { return 0; }
 
     public void encodeBER(OutputStream outputStream) throws java.io.IOException
     {
         BER.encodeHeader(outputStream, (byte) getSyntax(), 0);
     }
 
-    public int getBERPayloadLength() {
-        return getBERLength();
+    public void decodeBER(BERInputStream inputStream) throws java.io.IOException
+    {
+        BER.MutableByte type = new BER.MutableByte();
+        BER.decodeNull(inputStream, type);
+        this.syntax = type.getValue() & 0xFF;
     }
 
     public boolean equals(Object o)

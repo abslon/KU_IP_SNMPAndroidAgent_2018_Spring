@@ -12,13 +12,9 @@ public class UnsignedInt32 implements Variable
     // 생성자
     public UnsignedInt32() { }
 
-    public UnsignedInt32(long value) {
-        setValue(value);
-    }
+    public UnsignedInt32(long value) { setValue(value); }
 
-    public UnsignedInt32(int signedIntValue) {
-        setValue(signedIntValue & 0xFFFFFFFFL);
-    }
+    public UnsignedInt32(int signedIntValue) { setValue(signedIntValue & 0xFFFFFFFFL); }
 
     // BERSerializable 인터페이스
     // value의 값에 따라 3 ~ 7까지의 길이를 가질 수 있다.
@@ -38,8 +34,8 @@ public class UnsignedInt32 implements Variable
 
         else return 7;
     }
-    // uint 는 payload가 없음
-    public int getBERPayloadLength() { return getBERLength();}
+    // BER 길이 - 2
+    public int getBERPayloadLength() { return getBERLength() - 2;}
 
     // BER encoding
     public void encodeBER(OutputStream outputStream) throws java.io.IOException

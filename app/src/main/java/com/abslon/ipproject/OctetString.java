@@ -24,14 +24,9 @@ public class OctetString implements Variable
 
     public OctetString(String stringValue) { this.value = stringValue.getBytes(); }
 
-    public OctetString(OctetString other)
-    {
-        this.value = new byte[0];
-        append(other);
-    }
-
     // String operations
-    public void append(byte[] bytes) {
+    public void append(byte[] bytes)
+    {
         byte[] newValue = new byte[value.length + bytes.length];
         System.arraycopy(value, 0, newValue, 0, value.length);
         System.arraycopy(bytes, 0, newValue, value.length, bytes.length);
@@ -45,26 +40,6 @@ public class OctetString implements Variable
     public void clear() { value = new byte[0]; }
 
     public final int length() { return value.length; }
-
-    public OID toSubIndex(boolean impliedLength)
-    {
-        int[] subIndex;
-        int offset = 0;
-        if (!impliedLength)
-        {
-            subIndex = new int[length()+1];
-            subIndex[offset++] = length();
-        }
-        else
-        {
-            subIndex = new int[length()];
-        }
-        for (int i=0; i<length(); i++)
-        {
-            subIndex[offset+i] = value[i] & 0xFF;
-        }
-        return new OID(subIndex);
-    }
 
     // BERSerializable 인터페이스
     public int getBERLength() { return value.length + BER.getBERLengthOfLength(value.length) + 1; }

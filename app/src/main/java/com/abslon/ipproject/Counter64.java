@@ -16,12 +16,6 @@ public class Counter64 implements Variable
         setValue(value);
     }
 
-    // Counter increment
-    public long increment(long increment)
-    {
-        if (increment < 0) throw new IllegalArgumentException("Counter64의 increment 파라메터가 음수입니다. 값 : "+increment);
-        else return this.value += increment;
-    }
 
     // BERSerializable 인터페이스
     public int getBERLength()
@@ -36,8 +30,7 @@ public class Counter64 implements Variable
         else return (value < 0x80000000000000L) ? 9 : 10;
     }
 
-    // Counter64는 Payload가 따로 있는게 아닌 type이므로 BER 길이와 같음.
-    public int getBERPayloadLength() { return getBERLength(); }
+    public int getBERPayloadLength() { return getBERLength() - 2; }
 
     public void encodeBER(OutputStream outputStream) throws java.io.IOException
     {
@@ -48,9 +41,9 @@ public class Counter64 implements Variable
     {
         BER.MutableByte type = new BER.MutableByte();
         long newValue = BER.decodeUnsignedInt64(inputStream, type);
-        if (type.getValue() != BER.COUNTER64) {
-            throw new IOException("Wrong type encountered when decoding Counter64: " +
-                    type.getValue());
+        if (type.getValue() != BER.COUNTER64)
+        {
+            throw new IOException("Wrong type encountered when decoding Counter64: " + type.getValue());
         }
         setValue(newValue);
     }

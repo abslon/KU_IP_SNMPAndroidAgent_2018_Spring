@@ -34,31 +34,7 @@ public class IPAddress implements Variable
         }
     }
 
-    public IPAddress(byte[] addressBytes)
-    {
-        try
-        {
-            this.inetAddress = InetAddress.getByAddress(addressBytes);
-        }
-        catch (UnknownHostException ex)
-        {
-            throw new IllegalArgumentException("Unknown host: "+ex.getMessage());
-        }
-    }
-
     // parsing IP address
-    public static IPAddress Parse(String address)
-    {
-        try
-        {
-            InetAddress addr = InetAddress.getByName(address);
-            return new IPAddress(addr);
-        }
-        catch (Exception ex)
-        {
-            throw new IllegalArgumentException(address);
-        }
-    }
 
     public boolean CanParse(String address)
     {
@@ -76,7 +52,7 @@ public class IPAddress implements Variable
     // BERSerializable 인터페이스
     public int getBERLength() { return 6; }
 
-    public int getBERPayloadLength() { return getBERLength(); }
+    public int getBERPayloadLength() { return 4; }
 
     public void encodeBER(OutputStream outputStream) throws java.io.IOException
     {
